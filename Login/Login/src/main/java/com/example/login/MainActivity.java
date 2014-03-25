@@ -1,7 +1,7 @@
 package com.example.login;
 
+import android.os.StrictMode;
 import android.support.v7.app.ActionBarActivity;
-import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.text.Html;
@@ -11,86 +11,108 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.os.Build;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
-
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.cookie.Cookie;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.cookie.BasicClientCookie;
+import org.apache.http.protocol.BasicHttpContext;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends ActionBarActivity {
 
     private String url1 = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/token";
-    private String loginURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/login?";
+    private String logOUTURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/logout";
     private String courseUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/courses?token=";
     String jsondata;
     String token;
+    String _cookie;
     ArrayList<String> ar = new ArrayList<String>();
-
+    private static String MY_DOMAIN = "apis.huit.harvard.edu";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //need to do this to get the loadUserProfile to Work
+        if (android.os.Build.VERSION.SDK_INT > 7) {
+            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+            StrictMode.setThreadPolicy(policy);
+        }
         fetchJSON(url1);
-        sleep(3000);
+        sleep(3000); // buying some time while json loads
         JSONObject jsonResponse;
-
-
         final TextView output = (TextView) findViewById(R.id.output);
         final Button catalog = (Button) findViewById(R.id.catalog);
-        //final Button courses = (Button) findViewById(R.id.courses);
-
         try {
-
-            /****** Creates a new JSONObject with name/value mappings from the JSON string. ********/
+            /****** GETTING TOKEN AS UNIQUE IDENTIFIER FOR API ********/
             jsonResponse = new JSONObject(jsondata);
-
             token = (String) jsonResponse.get("token");
-
             Log.i("JSON parse: ", token);
-
-            output.setText(url1+token);
-
-
+            output.setText(url1+"  |  " + token);
         } catch (JSONException e) {
 
             e.printStackTrace();
         }
 
 
-//        if (savedInstanceState == null) {
-  //          getSupportFragmentManager().beginTransaction()
-    //                .add(R.id.container, new PlaceholderFragment())
-      //              .commit();
-        //}
-        WebView myWebView = (WebView) findViewById(R.id.webview);
+        final WebView myWebView = (WebView) findViewById(R.id.webview);
         myWebView.setWebViewClient(new WebViewClient());
-        myWebView.loadUrl(loginURL + token);
+        final String loginURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/login?token="+token+"&redirect=https%3A%2F%2Fapis.huit.harvard.edu%2Ffascourseplanner%2Frest%2Fv1%2Fcart%2Fcourses%3FauthComplete%3D1%26token%3D"+token;
+        System.out.println("My login URL: " + loginURL);
+        myWebView.loadUrl(loginURL);
         WebSettings settings = myWebView.getSettings();
         settings.setJavaScriptEnabled(true);
-        //myWebView.getSettings().setLoadWithOverviewMode(true);
-        //myWebView.getSettings().setUseWideViewPort(true);
+        final CookieSyncManager csm = CookieSyncManager.getInstance();
+        final CookieManager cookieManager = CookieManager.getInstance();
+        // Remove all cookies from the database.
+        cookieManager.removeAllCookie();
+        myWebView.setWebViewClient(new WebViewClient() {
+
+
+            public void onPageFinished(WebView view, String url) {
+                /**
+                 When the process sends the user to the final "success page",
+                 take the cookie and send it to my main auth class
+                 */
+                if(url.indexOf("authComplete") != -1){
+                    String c = CookieManager.getInstance().getCookie(MY_DOMAIN);
+                    output.setText(c);
+                    _cookie = c;
+                }
+            }
+        });
+
+        //myWebView.loadUrl(courseUrl + token);
 
 
         catalog.setOnClickListener(new View.OnClickListener() {
 
             public void onClick(View v) {
 
+                loadUserProfile(token);
                 String OutputData = "";
                 JSONObject jsonResponse;
-                fetchJSON(courseUrl+token);
-                sleep(3000);
+                //fetchJSON(courseUrl+token);
+
+                sleep(3000); //buying some time while json loads
+
 
                 try {
 
@@ -114,43 +136,95 @@ public class MainActivity extends ActionBarActivity {
                         String course_value = jsonChildNode.optString("value").toString();
                         String group_code = jsonChildNode.optString("group_code").toString();
                         String course_label = jsonChildNode.optString("label").toString();
+                        //Log.i("JSON COURSE TITLE", course_title);
 
-                        //Button button = new Button(this);
-                        //button.setId(i);
-                        //yourView.add(button);
                         String tmpData = "<p><a href='http://www.google.com'>testing</a>: "
-                                + "Course Title : \n\n     " + course_title + " | "
+                               + "Course Title : \n\n     " + course_title + " | "
                                 + course_value + " | "
                                 + group_code + " </p> ";
 
 
                         OutputData += Html.fromHtml(tmpData);
-                        //tmpData = tmpData;
+                        tmpData = tmpData;
                         ar.add(tmpData);
 
-                        Log.i("JSON parse", course_title);
+                        Log.i("JSON COURSE TITLE", course_title);
                     }
 
-                    //populateListView();
-                    //r/egisterClickCallback("add");
 
-                    /************ Show Output on screen/activity **********/
-                    //((TextView) findViewById(R.id.output)).setMovementMethod(LinkMovementMethod.getInstance());
-                    output.setText(Html.fromHtml(OutputData));
-
-                    //((TextView) findViewById(R.id.output)).setText(Html.fromHtml(OutputData));
 
 
                 } catch (JSONException e) {
 
                     e.printStackTrace();
                 }
-
+                    output.setText(OutputData);
             }
         });
 
     }
+    // this is only called once the setCookie has been called already
+    public boolean loadUserProfile(String mytoken){
 
+        DefaultHttpClient httpclient = new DefaultHttpClient();
+        httpclient.setCookieStore(new BasicCookieStore());
+        BasicHttpContext localContext = new BasicHttpContext();
+
+        try{
+
+
+            if(!_cookie.equals("")){
+                String[] cookies = _cookie.split(";");
+                String mylength = Integer.toString(cookies.length);
+                for(int i=0; i < cookies.length; i++){
+                    String[] nvp = cookies[i].split("=");
+                    BasicClientCookie c = new BasicClientCookie(nvp[0], nvp[1]);
+                    c.setDomain(MY_DOMAIN);
+                    httpclient.getCookieStore().addCookie(c);
+                }
+            }
+            BasicClientCookie cpapi = new BasicClientCookie("cpapi_token", token);
+            cpapi.setDomain(MY_DOMAIN);
+            httpclient.getCookieStore().addCookie(cpapi);
+            BasicClientCookie pin = new BasicClientCookie("faspincookietest", "1");
+            pin.setDomain(MY_DOMAIN);
+            httpclient.getCookieStore().addCookie(pin);
+
+            List<Cookie> cookies = httpclient.getCookieStore().getCookies();
+
+            if(cookies != null)
+            {
+                for(Cookie cookie : cookies)
+                {
+                    String cookieString = cookie.getName() + "=" + cookie.getValue() + "; domain=" + cookie.getDomain();
+                    Log.i("Cookie in the loop Info", cookieString);
+                }
+            }
+            HttpGet httpget = new HttpGet(courseUrl + mytoken);
+            System.out.println("COOKIE executing request " + httpget.getURI());
+            HttpResponse response = httpclient.execute(httpget);
+            int code = response.getStatusLine().getStatusCode();
+
+            HttpEntity entity = response.getEntity();
+            InputStream is = entity.getContent();
+            String data = convertStreamToString(is);
+            jsondata = data;
+            Log.i("JSON from load profile", jsondata);
+
+            if(code >= 400 && code < 500){
+
+                return false;
+            }
+            else{
+                return true;
+            }
+
+        }catch(Exception e){
+            // Log the error
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -207,7 +281,6 @@ public class MainActivity extends ActionBarActivity {
 
                     String data = convertStreamToString(stream);
                     jsondata = data;
-                    //readAndParseJSON(data);
                     stream.close();
 
                 } catch (Exception e) {
