@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Course Planner For Android</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="search">Search</string>
+    <string name="getjson">Show My Courses</string>
+    <!--
+    <string name="country">Country:</string>
+    <string name="temperature">Temperature:</string>
+    <string name="humidity">Humidity:</string>
+    <string name="pressure">Pressure:</string>
+    <string name="weather">Weather</string>
+    -->
+    <string name="title_activity_login_web_view">Course Planner Log In</string>
+    <string name="title_activity_catalog">Catalog</string>
+
+</resources>

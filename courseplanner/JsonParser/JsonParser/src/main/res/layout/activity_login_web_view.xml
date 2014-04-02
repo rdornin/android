@@ -1,0 +1,34 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".ParseXmlAndroidExample"
+    android:weightSum="1">
+
+    <Button
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="View Course Catalog"
+        android:id="@+id/catalog" />
+
+    <Button
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="View My Courses"
+        android:id="@+id/courses" />
+
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="0px"
+        android:id="@+id/output"
+        android:background="#ffffff"
+        android:layout_weight="0.65"
+        android:textColor="#000000"
+        android:editable="true" />
+
+    <WebView
+        android:layout_width="match_parent"
+        android:layout_height="380dp"
+        android:id="@+id/webview" />
+</LinearLayout>
