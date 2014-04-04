@@ -84,7 +84,7 @@ public class LoginWebView extends Activity {
         final WebView myWebView = (WebView) findViewById(R.id.webview);
         myWebView.setWebViewClient(new WebViewClient());
         //final String loginURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/login?token="+token+"&redirect=https%3A%2F%2Fapis.huit.harvard.edu%2Ffascourseplanner%2Frest%2Fv1%2Fcart%2Fcourses%3FauthComplete%3D1%26token%3D"+token;
-        final String loginURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/login?token="+token+"&redirect=http%3A%2F%2Fwww.people.fas.harvard.edu%2F%7edornin%2Fapi%2Findex.html%3FauthComplete%3D1%26token%3D";
+        final String loginURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/login?token="+token+"&redirect=http%3A%2F%2Fwww.people.fas.harvard.edu%2F%7edornin%2Fapi%2Findex.html%3FauthComplete%3D1%26token%3D"+token;
         System.out.println("zzz Login URL:" + loginURL);
         myWebView.loadUrl(loginURL);
         WebSettings settings = myWebView.getSettings();
@@ -101,12 +101,19 @@ public class LoginWebView extends Activity {
                  When the process sends the user to the final "success page",
                  take the cookie and send it to my main auth class
                  */
-                if(url.indexOf("authComplete") != -1){
+                System.out.println("zzz view url: " + url);
+                if(url.indexOf("api") != -1){
                     String c = CookieManager.getInstance().getCookie(MY_DOMAIN);
                     output.setText(c);
                     _cookie = c; //getting cookie string to parse later
                     System.out.println("zzz _cookie authcomplete: " + _cookie);
                     jsondata = loadUserProfile(token,_cookie,loginURL);
+
+                    if(url.indexOf("authComplete=1") != -1){
+                        Utils.sleep(1000);
+                        startActivity(new Intent(LoginWebView.this, Catalog.class));
+                        finish();
+                    }
                 }
             }
         });
@@ -149,7 +156,7 @@ public class LoginWebView extends Activity {
                     Log.i("zzz Cookie in the loop Info", cookieString);
                 }
             }
-            HttpGet httpget = new HttpGet(url + mytoken);
+            HttpGet httpget = new HttpGet(url);
             System.out.println("zzz COOKIE executing request " + httpget.getURI());
             HttpResponse response = httpclient.execute(httpget);
             int code = response.getStatusLine().getStatusCode();

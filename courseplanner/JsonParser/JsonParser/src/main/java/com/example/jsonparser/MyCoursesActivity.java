@@ -64,7 +64,7 @@ public class MyCoursesActivity extends Activity {
                 System.out.println("clicking catalog");
                 } });
         /************  Static JSON data ***********/
-        output.setText("My Courses");
+        output.setText("Catalog");
     }
 
     private void populateListView() {

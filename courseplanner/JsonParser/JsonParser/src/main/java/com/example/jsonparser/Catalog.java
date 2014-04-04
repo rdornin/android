@@ -75,11 +75,11 @@ public class Catalog extends Activity {
                         System.exit(1);
                     }
                 });
-        output.setText("Catalog");
+        output.setText("My Courses");
 
 
 
-                jsondata = LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,LoginWebView.courseUrl);
+                jsondata = LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(LoginWebView.courseUrl+LoginWebView.token));
 
                 String OutputData = "";
                 JSONObject jsonResponse;
