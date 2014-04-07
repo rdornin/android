@@ -26,7 +26,7 @@ import java.lang.Thread;
 import java.util.ArrayList;
 import android.widget.AdapterView;
 import android.widget.Toast;
-
+import android.telephony.gsm.SmsManager;
 
 import android.app.ListActivity;
 import android.database.Cursor;
@@ -38,38 +38,106 @@ import android.app.ListActivity;
 
 public class MyCoursesActivity extends Activity {
 
+
     private String url1 = "http://www.people.fas.harvard.edu/~dornin/api/catalog.js";
     String jsondata = "Loading json...";
-    ArrayList<String> ar = new ArrayList<String>();
+    ArrayList<CharSequence> ar = new ArrayList<CharSequence>();
     private int mNoteNumber = 1;
     private NotesDbAdapter mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        fetchJSON();
-        Utils.sleep(3000);//pausing for json to to load in :)
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mDbHelper = new NotesDbAdapter(this);
         mDbHelper.open();
-        fillData(mDbHelper);
+
 
         final TextView output = (TextView) findViewById(R.id.output);
 
-        Button daClicker = (Button) findViewById(R.id.catalog);
-        daClicker.setOnClickListener(
+        Button courses = (Button) findViewById(R.id.courses);
+        courses.setOnClickListener(
+                new View.OnClickListener() { @Override public void onClick(View v)
+                { startActivity(new Intent(MyCoursesActivity.this, MyCoursesActivity.class));
+                    finish();
+                    System.out.println("clicking courses");
+                } });
+
+        Button catalog = (Button) findViewById(R.id.catalog);
+        catalog.setOnClickListener(
                 new View.OnClickListener() { @Override public void onClick(View v)
                 { startActivity(new Intent(MyCoursesActivity.this, Catalog.class));
-                finish();
-                System.out.println("clicking catalog");
+                    finish();
+                    System.out.println("clicking catalog");
                 } });
-        /************  Static JSON data ***********/
-        output.setText("Catalog");
+
+        Button quit=(Button)findViewById(R.id.quit);
+        quit.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v){
+                        android.os.Process.killProcess(android.os.Process.myPid());
+                        System.exit(1);
+                    }
+                });
+        output.setText("My Courses");
+
+        jsondata = LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(LoginWebView.courseUrl+LoginWebView.token));
+
+        String OutputData = "";
+        JSONObject jsonResponse;
+
+        Utils.sleep(1000); //buying some time while json loads
+
+        try {
+            System.out.println("processing json:" + jsondata);
+            /****** Creates a new JSONObject with name/value mappings from the JSON string. ********/
+            jsonResponse = new JSONObject(jsondata);
+
+            /***** Returns the value mapped by name if it exists and is a JSONArray. ***/
+            /*******  Returns null otherwise.  *******/
+            JSONArray jsonMainNode = jsonResponse.optJSONArray("cart");
+
+            /*********** Process each JSON Node ************/
+
+            int lengthJsonArr = jsonMainNode.length();
+
+            for (int i = 0; i < lengthJsonArr; i++) {
+                /****** Get Object for each JSON node.***********/
+                JSONObject jsonChildNode = jsonMainNode.getJSONObject(i);
+
+                /******* Fetch node values **********/
+                String course_title = jsonChildNode.optString("title").toString();
+                String course_value = jsonChildNode.optString("value").toString();
+                String group_code = jsonChildNode.optString("group_code").toString();
+                String course_label = jsonChildNode.optString("label").toString();
+                String course_num = jsonChildNode.optString("cat_num").toString();
+                //Log.i("JSON COURSE TITLE", course_title);
+
+                String tmpData = "<a style='background-color:#99000;color:#ffffff;'>Delete</a> <b style=font-size: 14px;>"
+                        + "Course Title : \n\n     " + course_title + " <br/> Course Value: "
+                        + course_value + " <br/> Group Code: "
+                        + group_code + " </b> "
+                        + "(" + course_num + ")";
+
+
+                OutputData += Html.fromHtml(tmpData);
+                //tmpData = tmpData;
+                ar.add(Html.fromHtml(tmpData));
+
+                //Log.i("JSON COURSE TITLE", course_title);
+            }
+        } catch (JSONException e) {
+
+            e.printStackTrace();
+        }
+        populateListView();
+        registerClickCallback("delete");
+
     }
 
     private void populateListView() {
-        // Create list of items
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(this,
                 R.layout.textview,
                 ar);
         // Configure the list view.
@@ -84,19 +152,48 @@ public class MyCoursesActivity extends Activity {
             @Override
             public void onItemClick(AdapterView<?> paret, View viewClicked, int position, long id) {
                 TextView textView = (TextView) viewClicked;
-                fillData(mDbHelper);
+                //mDbHelper.createNote(noteName, "");
+                //fillData();
+                String course_num = getCatNum(textView.getText().toString());
                 if (action.equals("add")){
-                    createNote(textView.getText().toString());
-                    String message = "You added " + position + ", which is string: " + textView.getText().toString();
-                    Toast.makeText(MyCoursesActivity.this, message, Toast.LENGTH_LONG).show();
-                } else {
-                    String message = "You deleted " + position + ", which is string: " + textView.getText().toString();
-                    Toast.makeText(MyCoursesActivity.this, message, Toast.LENGTH_LONG).show();
-                    mDbHelper.deleteNote(position);
+                    //createNote(textView.getText().toString());
+                    String message = "I am adding " + textView.getText().toString();
+                    //Toast.makeText(MyCoursesActivity.this, message, Toast.LENGTH_LONG).show();
+
+                    String addUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/course/"+course_num+"?method=post&terse=0&token="+LoginWebView.token;
+                    LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(addUrl));
+                    Utils.sleep(1000);
+
+                    //Intent smsIntent = new Intent(Intent.ACTION_VIEW);
+                    //smsIntent.setType("vnd.android-dir/mms-sms");
+                    //smsIntent.putExtra("sms_body","Body of Message");
+                    //startActivity(smsIntent);
                     populateListView();
+
+                } else {
+                    String message = "You deleted " + course_num + ", which is: " + textView.getText().toString();
+                    Toast.makeText(MyCoursesActivity.this, message, Toast.LENGTH_LONG).show();
+                    //mDbHelper.deleteNote(id);
+
+                    SmsManager sms = SmsManager.getDefault();
+                    sms.sendTextMessage("6179675550", null, message, null, null);
+                    //String course_num = getCatNum(textView.getText().toString());//.substring((textView.getText().toString().indexOf("(") + 1), (textView.getText().toString().indexOf(")")));
+                    String deleteUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/course/"+course_num+"?method=delete&terse=0&token="+LoginWebView.token;
+                    LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(deleteUrl));
+                    System.out.println(deleteUrl);
+                    //https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/course/6947?method=delete&token=
+                    //populateListView();
+                    Utils.sleep(500);
+                    startActivity(new Intent(MyCoursesActivity.this, MyCoursesActivity.class));
+                    finish();
                 }
             }
         });
+
+    }
+    public static String getCatNum(String course) {
+         String cat_num = course.substring((course.indexOf("(") + 1),(course.indexOf(")")));
+         return cat_num;
     }
 
     private void createNote(String course_info) {
@@ -107,10 +204,9 @@ public class MyCoursesActivity extends Activity {
     }
 
 
-    private void fillData(NotesDbAdapter db) {
+    private void fillData() {
         // Get all of the notes from the database and create the item list
-        NotesDbAdapter database = db;
-        Cursor c = database.fetchAllNotes();
+        Cursor c = mDbHelper.fetchAllNotes();
         startManagingCursor(c);
 
         String[] from = new String[] { NotesDbAdapter.KEY_BODY };
@@ -118,7 +214,7 @@ public class MyCoursesActivity extends Activity {
 
         // Now create an array adapter and set it to display using our row
         SimpleCursorAdapter notes =
-               new SimpleCursorAdapter(this, R.layout.textview, c, from, to);
+                new SimpleCursorAdapter(this, R.layout.textview, c, from, to);
         //setListAdapter(notes);
         ListView list = (ListView) findViewById(R.id.listViewMain);
         list.setAdapter(notes);
@@ -129,40 +225,5 @@ public class MyCoursesActivity extends Activity {
         }
 
     }
-
-    public void fetchJSON() {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                //String data = "";
-                try {
-                    URL url = new URL(url1);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setReadTimeout(10000 /* milliseconds */);
-                    conn.setConnectTimeout(15000 /* milliseconds */);
-                    conn.setRequestMethod("GET");
-                    conn.setDoInput(true);
-                    // Starts the query
-                    conn.connect();
-                    InputStream stream = conn.getInputStream();
-
-                    String data = Utils.convertStreamToString(stream);
-                    jsondata = data;
-                    //readAndParseJSON(data);
-                    stream.close();
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        thread.start();
-        //return data;
-    }
-
-
-
-
 
 }

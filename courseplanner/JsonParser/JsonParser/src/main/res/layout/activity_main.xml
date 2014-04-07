@@ -46,7 +46,7 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="My Courses"
-        android:textColor="#009900"
+        android:textColor="#990000"
         android:textSize="42sp"
         android:textStyle="bold" />
 
@@ -54,7 +54,11 @@
         android:layout_width="match_parent"
         android:layout_height="302dp"
         android:id="@+id/listViewMain"
-        android:layout_weight="1.10" />
+        android:layout_weight="1.10"
+        android:paddingTop="5px"
+        android:paddingBottom="5px"
+        android:smoothScrollbar="true"
+        android:scrollingCache="true" />
 
 </LinearLayout>
 

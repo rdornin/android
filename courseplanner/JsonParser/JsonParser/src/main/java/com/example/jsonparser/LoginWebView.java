@@ -39,10 +39,9 @@ import java.util.List;
 public class LoginWebView extends Activity {
 
     public static String tokenUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/token";
-    //private String logOUTURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/logout";
-    public static String courseUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/courses?token=";
+    //private String logOutUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/logout";
+    public static String courseUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/courses?terse=0&token=";
     String jsondata;
-    //static String mytoken = fetchToken();
     public static String token = "";
     public static String _cookie;
 
@@ -58,11 +57,14 @@ public class LoginWebView extends Activity {
             StrictMode.setThreadPolicy(policy);
         }
         fetchToken();
-        Utils.sleep(1000); // buying some time while json loads
+        Utils.sleep(5000); // buying some time while json loads
         JSONObject jsonResponse;
-        final TextView output = (TextView) findViewById(R.id.output);
 
-        Button daClicker = (Button) findViewById(R.id.courses);
+
+
+        final TextView output = (TextView) findViewById(R.id.output);
+        //final TextView output = (TextView) findViewById(R.id.output);
+       /* Button daClicker = (Button) findViewById(R.id.courses);
         daClicker.setOnClickListener(
                 new View.OnClickListener() { @Override public void onClick(View v)
                 { startActivity(new Intent(LoginWebView.this, MyCoursesActivity.class));
@@ -78,7 +80,7 @@ public class LoginWebView extends Activity {
                     System.out.println("zzz clicking catalog");
                 } });
         Log.i("zzz JSON parse: ", token);
-        output.setText(tokenUrl+"  |  " + token);
+        //output.setText("Course Planner Login");*/
 
 
         final WebView myWebView = (WebView) findViewById(R.id.webview);
@@ -101,24 +103,21 @@ public class LoginWebView extends Activity {
                  When the process sends the user to the final "success page",
                  take the cookie and send it to my main auth class
                  */
-                System.out.println("zzz view url: " + url);
-                if(url.indexOf("api") != -1){
+                //System.out.println("zzz view url: " + url);
+                //if(url.indexOf("api") != -1){
                     String c = CookieManager.getInstance().getCookie(MY_DOMAIN);
-                    output.setText(c);
+                    //output.setText(c);
                     _cookie = c; //getting cookie string to parse later
-                    System.out.println("zzz _cookie authcomplete: " + _cookie);
+                    //System.out.println("zzz _cookie authcomplete: " + _cookie);
                     jsondata = loadUserProfile(token,_cookie,loginURL);
-
                     if(url.indexOf("authComplete=1") != -1){
-                        Utils.sleep(1000);
-                        startActivity(new Intent(LoginWebView.this, Catalog.class));
+                        Utils.sleep(3000);
+                        startActivity(new Intent(LoginWebView.this,MyCoursesActivity.class));
                         finish();
                     }
-                }
+               // }
             }
         });
-
-
 
     }
     // this is only called once the setCookie has been called already
@@ -131,7 +130,7 @@ public class LoginWebView extends Activity {
         try{
             if(!cookieLocal.equals("")){
                 String[] cookies = cookieLocal.split(";");
-                String mylength = Integer.toString(cookies.length);
+                //String mylength = Integer.toString(cookies.length);
                 for(int i=0; i < cookies.length; i++){
                     String[] nvp = cookies[i].split("=");
                     BasicClientCookie c = new BasicClientCookie(nvp[0], nvp[1]);
@@ -153,19 +152,19 @@ public class LoginWebView extends Activity {
                 for(Cookie cookie : cookies)
                 {
                     String cookieString = cookie.getName() + "=" + cookie.getValue() + "; domain=" + cookie.getDomain();
-                    Log.i("zzz Cookie in the loop Info", cookieString);
+                    //Log.i("zzz Cookie in the loop Info", cookieString);
                 }
             }
             HttpGet httpget = new HttpGet(url);
             System.out.println("zzz COOKIE executing request " + httpget.getURI());
             HttpResponse response = httpclient.execute(httpget);
-            int code = response.getStatusLine().getStatusCode();
+            //int code = response.getStatusLine().getStatusCode();
 
             HttpEntity entity = response.getEntity();
             InputStream is = entity.getContent();
             data = Utils.convertStreamToString(is);
             //jsondata = data;
-            Log.i("JSON from load profile", data);
+            //Log.i("JSON from load profile", data);
 
         }catch(Exception e){
             // Log the error
@@ -236,12 +235,12 @@ public class LoginWebView extends Activity {
                     conn.setRequestMethod("GET");
                     conn.setDoInput(true);
                     // Starts the query
-                    System.out.println("zzz before connect data: " + data);
+                    //System.out.println("zzz before connect data: " + data);
                     conn.connect();
                     InputStream stream = conn.getInputStream();
 
                     data = Utils.convertStreamToString(stream);
-                    System.out.println("zzz after connect data: " + data);
+                    //System.out.println("zzz after connect data: " + data);
                     //jsondata = data;
                     stream.close();
 

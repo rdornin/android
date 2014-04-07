@@ -39,33 +39,39 @@ import android.widget.SimpleCursorAdapter;
 import android.app.ListActivity;
 
 public class Catalog extends Activity {
-
     private String url1 = "http://www.people.fas.harvard.edu/~dornin/api/catalog.js";
+    private String catalogUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/catalog?token=";
     String jsondata = "Loading json...";
-    ArrayList<String> ar = new ArrayList<String>();
+    ArrayList<CharSequence> ar = new ArrayList<CharSequence>();
     private int mNoteNumber = 1;
     private NotesDbAdapter mDbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        //fetchJSON();
-        Utils.sleep(1000);//pausing for json to to load in :)
+        fetchJSON();
+        //Utils.sleep(3000);//pausing for json to to load in :)
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        mDbHelper = new NotesDbAdapter(this);
-        mDbHelper.open();
-
+        //mDbHelper = new NotesDbAdapter(this);
+        //mDbHelper.open();
+        //fillData(mDbHelper);
 
         final TextView output = (TextView) findViewById(R.id.output);
-
-        Button daClicker = (Button) findViewById(R.id.courses);
-        daClicker.setOnClickListener(
+        Button courses = (Button) findViewById(R.id.courses);
+        courses.setOnClickListener(
                 new View.OnClickListener() { @Override public void onClick(View v)
                 { startActivity(new Intent(Catalog.this, MyCoursesActivity.class));
                     finish();
                     System.out.println("clicking courses");
                 } });
 
+        Button catalog = (Button) findViewById(R.id.catalog);
+        catalog.setOnClickListener(
+                new View.OnClickListener() { @Override public void onClick(View v)
+                { startActivity(new Intent(Catalog.this, Catalog.class));
+                    finish();
+                    System.out.println("clicking catalog");
+                } });
         Button quit=(Button)findViewById(R.id.quit);
         quit.setOnClickListener(
                 new View.OnClickListener() {
@@ -75,69 +81,59 @@ public class Catalog extends Activity {
                         System.exit(1);
                     }
                 });
-        output.setText("My Courses");
+        output.setText("Catalog");
 
+        //jsondata = LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(catalogUrl+LoginWebView.token));
+        Utils.sleep(1500);
+        JSONObject jsonResponse;
 
+        //Utils.sleep(1000); //buying some time while json loads
+        try {
+            System.out.println("processing json:" + jsondata);
+            /****** Creates a new JSONObject with name/value mappings from the JSON string. ********/
+            jsonResponse = new JSONObject(jsondata);
 
-                jsondata = LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(LoginWebView.courseUrl+LoginWebView.token));
+            /***** Returns the value mapped by name if it exists and is a JSONArray. ***/
+            /*******  Returns null otherwise.  *******/
+            JSONArray jsonMainNode = jsonResponse.optJSONArray("catalog");
 
-                String OutputData = "";
-                JSONObject jsonResponse;
+            /*********** Process each JSON Node ************/
 
-                Utils.sleep(1000); //buying some time while json loads
+            int lengthJsonArr = jsonMainNode.length();
 
-                try {
-                    System.out.println("processing json:" + jsondata);
-                    /****** Creates a new JSONObject with name/value mappings from the JSON string. ********/
-                    jsonResponse = new JSONObject(jsondata);
+            for (int i = 0; i < lengthJsonArr; i++) {
+                /****** Get Object for each JSON node.***********/
+                JSONObject jsonChildNode = jsonMainNode.getJSONObject(i);
 
-                    /***** Returns the value mapped by name if it exists and is a JSONArray. ***/
-                    /*******  Returns null otherwise.  *******/
-                    JSONArray jsonMainNode = jsonResponse.optJSONArray("cart");
+                /******* Fetch node values **********/
+                String course_title = jsonChildNode.optString("title").toString();
+                String course_value = jsonChildNode.optString("value").toString();
+                String group_code = jsonChildNode.optString("group_code").toString();
+                String course_label = jsonChildNode.optString("label").toString();
+                //Log.i("JSON COURSE TITLE", course_title);
 
-                    /*********** Process each JSON Node ************/
+                String tmpData = "<a style='background-color:#99000;color:#ffffff;'>Add</a> <b style=font-size: 14px;>"
+                        + "Course Title : \n\n     " + course_title + " <br/> Course Value: "
+                        + course_value + " <br/> Group Code: "
+                        + group_code + " </b> "
+                        + "(" + course_value + ")";
 
-                    int lengthJsonArr = jsonMainNode.length();
+                ar.add(Html.fromHtml(tmpData));
 
-                    for (int i = 0; i < lengthJsonArr; i++) {
-                        /****** Get Object for each JSON node.***********/
-                        JSONObject jsonChildNode = jsonMainNode.getJSONObject(i);
+            }
+        } catch (JSONException e) {
 
-                        /******* Fetch node values **********/
-                        String course_title = jsonChildNode.optString("title").toString();
-                        String course_value = jsonChildNode.optString("value").toString();
-                        String group_code = jsonChildNode.optString("group_code").toString();
-                        String course_label = jsonChildNode.optString("label").toString();
-                        //Log.i("JSON COURSE TITLE", course_title);
+            e.printStackTrace();
+        }
+        populateListView();
+        registerClickCallback("add");
 
-                        String tmpData = "<p><a href='http://www.google.com'>testing</a>: "
-                                + "Course Title : \n\n     " + course_title + " | "
-                                + course_value + " | "
-                                + group_code + " </p> ";
-
-
-                        OutputData += Html.fromHtml(tmpData);
-                        tmpData = tmpData;
-                        ar.add(tmpData);
-
-                        Log.i("JSON COURSE TITLE", course_title);
-                    }
-
-
-
-
-                } catch (JSONException e) {
-
-                    e.printStackTrace();
-                }
-                //output.setText(OutputData);
-                populateListView();
-                registerClickCallback("Delete");
 
     }
 
     private void populateListView() {
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        // Create list of items
+        ArrayAdapter<CharSequence> adapter = new ArrayAdapter<CharSequence>(this,
                 R.layout.textview,
                 ar);
         // Configure the list view.
@@ -152,17 +148,21 @@ public class Catalog extends Activity {
             @Override
             public void onItemClick(AdapterView<?> paret, View viewClicked, int position, long id) {
                 TextView textView = (TextView) viewClicked;
-                //mDbHelper.createNote(noteName, "");
-                //fillData();
+                //fillData(mDbHelper);
+                String course_num = MyCoursesActivity.getCatNum(textView.getText().toString());
                 if (action.equals("add")){
-                    createNote(textView.getText().toString());
-                    String message = "You added " + position + ", which is string: " + textView.getText().toString();
+                    //createNote(textView.getText().toString());
+                    String message = "You added " + course_num + ", which is: " + textView.getText().toString();
+                    String addUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/course/"+course_num+"?method=post&terse=0&token="+LoginWebView.token;
+                    LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(addUrl));
+                    Utils.sleep(800);
                     Toast.makeText(Catalog.this, message, Toast.LENGTH_LONG).show();
+
                 } else {
-                    String message = "You deleted " + position + ", which is string: " + textView.getText().toString();
+                    String message = "You deleted " + course_num + ", which is: " + textView.getText().toString();
                     Toast.makeText(Catalog.this, message, Toast.LENGTH_LONG).show();
-                    mDbHelper.deleteNote(position);
-                    populateListView();
+                    //mDbHelper.deleteNote(position);
+                    //populateListView();
                 }
             }
         });
@@ -176,9 +176,10 @@ public class Catalog extends Activity {
     }
 
 
-    private void fillData() {
+    private void fillData(NotesDbAdapter db) {
         // Get all of the notes from the database and create the item list
-        Cursor c = mDbHelper.fetchAllNotes();
+        NotesDbAdapter database = db;
+        Cursor c = database.fetchAllNotes();
         startManagingCursor(c);
 
         String[] from = new String[] { NotesDbAdapter.KEY_BODY };
@@ -190,11 +191,11 @@ public class Catalog extends Activity {
         //setListAdapter(notes);
         ListView list = (ListView) findViewById(R.id.listViewMain);
         list.setAdapter(notes);
-        for( int i = 0; i <= from.length - 1; i++)
-        {
-            Log.i("JSON parse", from[i]);
+        //for( int i = 0; i <= from.length - 1; i++)
+        //{
+            //Log.i("JSON parse", from[i]);
             // and the next time get element      1 and 2 and put this in another variable.
-        }
+        //}
 
     }
 
@@ -228,8 +229,6 @@ public class Catalog extends Activity {
         thread.start();
         //return data;
     }
-
-
 
 
 

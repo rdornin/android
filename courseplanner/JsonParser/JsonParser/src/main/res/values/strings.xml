@@ -13,7 +13,7 @@
     <string name="pressure">Pressure:</string>
     <string name="weather">Weather</string>
     -->
-    <string name="title_activity_login_web_view">Course Planner Log In</string>
-    <string name="title_activity_catalog">Catalog</string>
+    <string name="title_activity_login_web_view">Harvard College Course Planner Log In</string>
+    <string name="title_activity_main">Harvard College Personal Course Planner</string>
 
 </resources>
