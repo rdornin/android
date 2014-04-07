@@ -2,6 +2,7 @@ package com.example.jsonparser;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.Build;
 import android.os.StrictMode;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -21,10 +22,16 @@ import android.widget.Button;
 import android.widget.TextView;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.protocol.BasicHttpContext;
 import org.json.JSONArray;
@@ -35,6 +42,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import android.os.StrictMode;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
 
 public class LoginWebView extends Activity {
 
@@ -52,14 +63,17 @@ public class LoginWebView extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_web_view);
         //need to do this to get the loadUserProfile to Work
-        if (android.os.Build.VERSION.SDK_INT > 7) {
-            StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-            StrictMode.setThreadPolicy(policy);
-        }
+        //if (android.os.Build.VERSION.SDK_INT > 9) {
+          //  StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+           // StrictMode.setThreadPolicy(policy);
+            //StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build());
+        //}
+        //StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build());
+        //StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        //StrictMode.setThreadPolicy(policy);
+        disableConnectionReuseIfNecessary();
         fetchToken();
-        Utils.sleep(5000); // buying some time while json loads
-        JSONObject jsonResponse;
-
+        Utils.sleep(2000); // buying some time while json loads
 
 
         final TextView output = (TextView) findViewById(R.id.output);
@@ -210,6 +224,13 @@ public class LoginWebView extends Activity {
         }
     }
 
+    private void disableConnectionReuseIfNecessary() {
+        // HTTP connection reuse which was buggy pre-froyo
+        if (Integer.parseInt(Build.VERSION.SDK) < Build.VERSION_CODES.FROYO) {
+            System.setProperty("http.keepAlive", "false");
+        }
+    }
+
     public static String getToken(){
         String gettoken = token;
         return gettoken;
@@ -220,29 +241,55 @@ public class LoginWebView extends Activity {
         return getcookie;
     }
 
-    public void fetchToken() {
+    /*public void fetchToken() {
         //final String mylink = s;
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 String data = "";
-                String returnToken = "";
                 try {
-                    URL url = new URL(tokenUrl);
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setReadTimeout(10000 /* milliseconds */);
-                    conn.setConnectTimeout(15000 /* milliseconds */);
-                    conn.setRequestMethod("GET");
-                    conn.setDoInput(true);
+                    //URL url = new URL(tokenUrl);
+                    System.out.println("zzz token url: " + tokenUrl);
+                    //HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                   // conn.setReadTimeout(10000  );
+                    //conn.setConnectTimeout(15000 );
+                    //conn.setRequestMethod("GET");
+                    //conn.setDoInput(true);
                     // Starts the query
-                    //System.out.println("zzz before connect data: " + data);
-                    conn.connect();
-                    InputStream stream = conn.getInputStream();
 
-                    data = Utils.convertStreamToString(stream);
-                    //System.out.println("zzz after connect data: " + data);
+                    //System.out.println("zzz getting response code:" + conn.getResponseCode());
+                    HostnameVerifier hostnameVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
+                    //SchemeRegistry registry = new SchemeRegistry();
+                    SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
+                    socketFactory.setHostnameVerifier((X509HostnameVerifier) hostnameVerifier);
+                    //registry.register(new Scheme("https", socketFactory, 443));
+                    //SingleClientConnManager mgr = new SingleClientConnManager(client.getParams(), registry);
+                    DefaultHttpClient httpClient = new DefaultHttpClient();
+                    //httpClient.getConnectionManager().getSchemeRegistry().register(new Scheme("SSLSocketFactory", SSLSocketFactory.getSocketFactory(), 443));
+                    HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
+                    //HttpClient httpclient = new DefaultHttpClient();
+                    HttpGet httpget = new HttpGet(tokenUrl);
+                    HttpResponse response = httpClient.execute(httpget);
+                    Utils.sleep(1000);
+                    Log.i("zzz Praeda",response.getStatusLine().toString());
+                    HttpEntity entity = response.getEntity();
+                    if (entity != null) {
+
+                        // A Simple JSON Response Read
+                        InputStream instream = entity.getContent();
+                        System.out.println("zzz before connect data: " + data);
+                        data = Utils.convertStreamToString(instream);
+                        // now you have the string representation of the HTML request
+                        instream.close();
+                    }
+                    //conn.connect();
+
+                    //InputStream stream = conn.getInputStream();
+
+
+                    System.out.println("zzz after connect data: " + data);
                     //jsondata = data;
-                    stream.close();
+                    //stream.close();
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -259,7 +306,48 @@ public class LoginWebView extends Activity {
             }
             });
             thread.start();
-    }
+    }*/
+
+ public void fetchToken() {
+        //final String mylink = s;
+        Thread thread = new Thread(new Runnable() {
+@Override
+public void run() {
+        String data = "";
+        String returnToken = "";
+        try {
+        URL url = new URL(tokenUrl);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setReadTimeout(10000 /* milliseconds */);
+        conn.setConnectTimeout(15000 /* milliseconds */);
+        conn.setRequestMethod("GET");
+        conn.setDoInput(true);
+        // Starts the query
+        //System.out.println("zzz before connect data: " + data);
+        conn.connect();
+        InputStream stream = conn.getInputStream();
+
+        data = Utils.convertStreamToString(stream);
+        //System.out.println("zzz after connect data: " + data);
+        //jsondata = data;
+        stream.close();
+
+        } catch (Exception e) {
+        e.printStackTrace();
+        }
+        try {
+
+        JSONObject jsonResponse = new JSONObject(data);
+        token = (String) jsonResponse.get("token");
+        System.out.println("zzz return token: " + token);
+
+        } catch (JSONException e) {
+        e.printStackTrace();
+        }
+        }
+        });
+        thread.start();
+        }
 }
 
 
