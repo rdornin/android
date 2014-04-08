@@ -49,7 +49,7 @@ public class Catalog extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         fetchJSON();
-        //Utils.sleep(3000);//pausing for json to to load in :)
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //mDbHelper = new NotesDbAdapter(this);
@@ -81,13 +81,22 @@ public class Catalog extends Activity {
                         System.exit(1);
                     }
                 });
+        Button sendtext=(Button)findViewById(R.id.sendtext);
+        sendtext.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v){
+                        Intent smsIntent = new Intent(Intent.ACTION_VIEW);
+                        smsIntent.setType("vnd.android-dir/mms-sms");
+                        smsIntent.putExtra("sms_body","Hey classmate, I am signing up for courses with the course planner app! Check it out!");
+                        startActivity(smsIntent);
+                    }
+                });
         output.setText("Catalog");
 
-        //jsondata = LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(catalogUrl+LoginWebView.token));
         Utils.sleep(1500);
         JSONObject jsonResponse;
 
-        //Utils.sleep(1000); //buying some time while json loads
         try {
             System.out.println("processing json:" + jsondata);
             /****** Creates a new JSONObject with name/value mappings from the JSON string. ********/
@@ -112,10 +121,10 @@ public class Catalog extends Activity {
                 String course_label = jsonChildNode.optString("label").toString();
                 //Log.i("JSON COURSE TITLE", course_title);
 
-                String tmpData = "<a style='background-color:#99000;color:#ffffff;'>Add</a> <b style=font-size: 14px;>"
-                        + "Course Title : \n\n     " + course_title + " <br/> Course Value: "
+                String tmpData = "<b>Add: </b>"
+                        + "<br/>Course Title: \n\n     " + course_title + " <br/> Course Value: "
                         + course_value + " <br/> Group Code: "
-                        + group_code + " </b> "
+                        + group_code
                         + "(" + course_value + ")";
 
                 ar.add(Html.fromHtml(tmpData));
@@ -152,14 +161,14 @@ public class Catalog extends Activity {
                 String course_num = MyCoursesActivity.getCatNum(textView.getText().toString());
                 if (action.equals("add")){
                     //createNote(textView.getText().toString());
-                    String message = "You added " + course_num + ", which is: " + textView.getText().toString();
+                    String message = "You selected to  " + textView.getText().toString();
                     String addUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/course/"+course_num+"?method=post&terse=0&token="+LoginWebView.token;
                     LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(addUrl));
-                    Utils.sleep(800);
+                    Utils.sleep(500);
                     Toast.makeText(Catalog.this, message, Toast.LENGTH_LONG).show();
 
                 } else {
-                    String message = "You deleted " + course_num + ", which is: " + textView.getText().toString();
+                    String message = "You selected to  " + textView.getText().toString();
                     Toast.makeText(Catalog.this, message, Toast.LENGTH_LONG).show();
                     //mDbHelper.deleteNote(position);
                     //populateListView();

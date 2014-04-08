@@ -2,11 +2,8 @@ package com.example.jsonparser;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.os.Build;
-import android.os.StrictMode;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
-import android.text.Html;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -18,39 +15,26 @@ import android.webkit.CookieSyncManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Button;
 import android.widget.TextView;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.cookie.Cookie;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.SingleClientConnManager;
 import org.apache.http.impl.cookie.BasicClientCookie;
 import org.apache.http.protocol.BasicHttpContext;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.List;
-import android.os.StrictMode;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
 
 public class LoginWebView extends Activity {
 
     public static String tokenUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/token";
-    //private String logOutUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/logout";
     public static String courseUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/courses?terse=0&token=";
     String jsondata;
     public static String token = "";
@@ -62,45 +46,16 @@ public class LoginWebView extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login_web_view);
-        //need to do this to get the loadUserProfile to Work
-        //if (android.os.Build.VERSION.SDK_INT > 9) {
-          //  StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-           // StrictMode.setThreadPolicy(policy);
-            //StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build());
-        //}
-        //StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder().detectDiskReads().detectDiskWrites().detectNetwork().penaltyLog().build());
-        //StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        //StrictMode.setThreadPolicy(policy);
-        disableConnectionReuseIfNecessary();
         fetchToken();
-        Utils.sleep(2000); // buying some time while json loads
+
+        Utils.sleep(1000); // buying some time while json loads
 
 
         final TextView output = (TextView) findViewById(R.id.output);
-        //final TextView output = (TextView) findViewById(R.id.output);
-       /* Button daClicker = (Button) findViewById(R.id.courses);
-        daClicker.setOnClickListener(
-                new View.OnClickListener() { @Override public void onClick(View v)
-                { startActivity(new Intent(LoginWebView.this, MyCoursesActivity.class));
-                    finish();
-                    System.out.println("zzz clicking courses");
-                } });
-
-        Button catalog = (Button) findViewById(R.id.catalog);
-        catalog.setOnClickListener(
-                new View.OnClickListener() { @Override public void onClick(View v)
-                { startActivity(new Intent(LoginWebView.this, Catalog.class));
-                    finish();
-                    System.out.println("zzz clicking catalog");
-                } });
-        Log.i("zzz JSON parse: ", token);
-        //output.setText("Course Planner Login");*/
-
-
         final WebView myWebView = (WebView) findViewById(R.id.webview);
         myWebView.setWebViewClient(new WebViewClient());
         //final String loginURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/login?token="+token+"&redirect=https%3A%2F%2Fapis.huit.harvard.edu%2Ffascourseplanner%2Frest%2Fv1%2Fcart%2Fcourses%3FauthComplete%3D1%26token%3D"+token;
-        final String loginURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/login?token="+token+"&redirect=http%3A%2F%2Fwww.people.fas.harvard.edu%2F%7edornin%2Fapi%2Findex.html%3FauthComplete%3D1%26token%3D"+token;
+        final String loginURL = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/login?token=" + token + "&redirect=http%3A%2F%2Fwww.people.fas.harvard.edu%2F%7edornin%2Fapi%2Findex.html%3FauthComplete%3D1%26token%3D" + token;
         System.out.println("zzz Login URL:" + loginURL);
         myWebView.loadUrl(loginURL);
         WebSettings settings = myWebView.getSettings();
@@ -117,35 +72,30 @@ public class LoginWebView extends Activity {
                  When the process sends the user to the final "success page",
                  take the cookie and send it to my main auth class
                  */
-                //System.out.println("zzz view url: " + url);
-                //if(url.indexOf("api") != -1){
-                    String c = CookieManager.getInstance().getCookie(MY_DOMAIN);
-                    //output.setText(c);
-                    _cookie = c; //getting cookie string to parse later
-                    //System.out.println("zzz _cookie authcomplete: " + _cookie);
-                    jsondata = loadUserProfile(token,_cookie,loginURL);
-                    if(url.indexOf("authComplete=1") != -1){
-                        Utils.sleep(3000);
-                        startActivity(new Intent(LoginWebView.this,MyCoursesActivity.class));
-                        finish();
-                    }
-               // }
+                String c = CookieManager.getInstance().getCookie(MY_DOMAIN);
+                _cookie = c; //getting cookie string to parse later
+                jsondata = loadUserProfile(token, _cookie, loginURL);
+                if (url.indexOf("authComplete=1") != -1) {
+                    Utils.sleep(2000);
+                    startActivity(new Intent(LoginWebView.this, MyCoursesActivity.class));
+                    finish();
+                }
             }
         });
 
     }
+
     // this is only called once the setCookie has been called already
-    public static String loadUserProfile(String mytoken, String cookieLocal, String url){
+    public static String loadUserProfile(String mytoken, String cookieLocal, String url) {
 
         DefaultHttpClient httpclient = new DefaultHttpClient();
         httpclient.setCookieStore(new BasicCookieStore());
         BasicHttpContext localContext = new BasicHttpContext();
         String data = "";
-        try{
-            if(!cookieLocal.equals("")){
+        try {
+            if (!cookieLocal.equals("")) {
                 String[] cookies = cookieLocal.split(";");
-                //String mylength = Integer.toString(cookies.length);
-                for(int i=0; i < cookies.length; i++){
+                for (int i = 0; i < cookies.length; i++) {
                     String[] nvp = cookies[i].split("=");
                     BasicClientCookie c = new BasicClientCookie(nvp[0], nvp[1]);
                     c.setDomain(MY_DOMAIN);
@@ -161,29 +111,17 @@ public class LoginWebView extends Activity {
 
             List<Cookie> cookies = httpclient.getCookieStore().getCookies();
 
-            if(cookies != null)
-            {
-                for(Cookie cookie : cookies)
-                {
-                    String cookieString = cookie.getName() + "=" + cookie.getValue() + "; domain=" + cookie.getDomain();
-                    //Log.i("zzz Cookie in the loop Info", cookieString);
-                }
-            }
             HttpGet httpget = new HttpGet(url);
             System.out.println("zzz COOKIE executing request " + httpget.getURI());
             HttpResponse response = httpclient.execute(httpget);
-            //int code = response.getStatusLine().getStatusCode();
 
             HttpEntity entity = response.getEntity();
             InputStream is = entity.getContent();
             data = Utils.convertStreamToString(is);
-            //jsondata = data;
-            //Log.i("JSON from load profile", data);
+            Log.i("JSON from load profile", data);
 
-        }catch(Exception e){
-            // Log the error
+        } catch (Exception e) {
             e.printStackTrace();
-            //return false;
         }
         return data;
     }
@@ -224,72 +162,33 @@ public class LoginWebView extends Activity {
         }
     }
 
-    private void disableConnectionReuseIfNecessary() {
-        // HTTP connection reuse which was buggy pre-froyo
-        if (Integer.parseInt(Build.VERSION.SDK) < Build.VERSION_CODES.FROYO) {
-            System.setProperty("http.keepAlive", "false");
-        }
-    }
-
-    public static String getToken(){
+    public static String getToken() {
         String gettoken = token;
         return gettoken;
     }
 
-    public static String getLocalCookie(){
+    public static String getLocalCookie() {
         String getcookie = _cookie;
         return getcookie;
     }
 
-    /*public void fetchToken() {
-        //final String mylink = s;
+    public void fetchToken() {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
                 String data = "";
                 try {
-                    //URL url = new URL(tokenUrl);
-                    System.out.println("zzz token url: " + tokenUrl);
-                    //HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                   // conn.setReadTimeout(10000  );
-                    //conn.setConnectTimeout(15000 );
-                    //conn.setRequestMethod("GET");
-                    //conn.setDoInput(true);
-                    // Starts the query
+                    URL url = new URL(tokenUrl);
+                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                    conn.setReadTimeout(10000 /* milliseconds */);
+                    conn.setConnectTimeout(15000 /* milliseconds */);
+                    conn.setRequestMethod("GET");
+                    conn.setDoInput(true);
+                    conn.connect();
+                    InputStream stream = conn.getInputStream();
 
-                    //System.out.println("zzz getting response code:" + conn.getResponseCode());
-                    HostnameVerifier hostnameVerifier = org.apache.http.conn.ssl.SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
-                    //SchemeRegistry registry = new SchemeRegistry();
-                    SSLSocketFactory socketFactory = SSLSocketFactory.getSocketFactory();
-                    socketFactory.setHostnameVerifier((X509HostnameVerifier) hostnameVerifier);
-                    //registry.register(new Scheme("https", socketFactory, 443));
-                    //SingleClientConnManager mgr = new SingleClientConnManager(client.getParams(), registry);
-                    DefaultHttpClient httpClient = new DefaultHttpClient();
-                    //httpClient.getConnectionManager().getSchemeRegistry().register(new Scheme("SSLSocketFactory", SSLSocketFactory.getSocketFactory(), 443));
-                    HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
-                    //HttpClient httpclient = new DefaultHttpClient();
-                    HttpGet httpget = new HttpGet(tokenUrl);
-                    HttpResponse response = httpClient.execute(httpget);
-                    Utils.sleep(1000);
-                    Log.i("zzz Praeda",response.getStatusLine().toString());
-                    HttpEntity entity = response.getEntity();
-                    if (entity != null) {
-
-                        // A Simple JSON Response Read
-                        InputStream instream = entity.getContent();
-                        System.out.println("zzz before connect data: " + data);
-                        data = Utils.convertStreamToString(instream);
-                        // now you have the string representation of the HTML request
-                        instream.close();
-                    }
-                    //conn.connect();
-
-                    //InputStream stream = conn.getInputStream();
-
-
-                    System.out.println("zzz after connect data: " + data);
-                    //jsondata = data;
-                    //stream.close();
+                    data = Utils.convertStreamToString(stream);
+                    stream.close();
 
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -304,50 +203,9 @@ public class LoginWebView extends Activity {
                     e.printStackTrace();
                 }
             }
-            });
-            thread.start();
-    }*/
-
- public void fetchToken() {
-        //final String mylink = s;
-        Thread thread = new Thread(new Runnable() {
-@Override
-public void run() {
-        String data = "";
-        String returnToken = "";
-        try {
-        URL url = new URL(tokenUrl);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setReadTimeout(10000 /* milliseconds */);
-        conn.setConnectTimeout(15000 /* milliseconds */);
-        conn.setRequestMethod("GET");
-        conn.setDoInput(true);
-        // Starts the query
-        //System.out.println("zzz before connect data: " + data);
-        conn.connect();
-        InputStream stream = conn.getInputStream();
-
-        data = Utils.convertStreamToString(stream);
-        //System.out.println("zzz after connect data: " + data);
-        //jsondata = data;
-        stream.close();
-
-        } catch (Exception e) {
-        e.printStackTrace();
-        }
-        try {
-
-        JSONObject jsonResponse = new JSONObject(data);
-        token = (String) jsonResponse.get("token");
-        System.out.println("zzz return token: " + token);
-
-        } catch (JSONException e) {
-        e.printStackTrace();
-        }
-        }
         });
         thread.start();
-        }
+    }
 }
 
 

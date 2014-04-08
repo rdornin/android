@@ -80,6 +80,17 @@ public class MyCoursesActivity extends Activity {
                         System.exit(1);
                     }
                 });
+        Button sendtext=(Button)findViewById(R.id.sendtext);
+        sendtext.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v){
+                        Intent smsIntent = new Intent(Intent.ACTION_VIEW);
+                        smsIntent.setType("vnd.android-dir/mms-sms");
+                        smsIntent.putExtra("sms_body","Hey classmate, I am signing up for courses with the course planner app! Check it out!");
+                        startActivity(smsIntent);
+                    }
+                });
         output.setText("My Courses");
 
         jsondata = LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(LoginWebView.courseUrl+LoginWebView.token));
@@ -114,10 +125,10 @@ public class MyCoursesActivity extends Activity {
                 String course_num = jsonChildNode.optString("cat_num").toString();
                 //Log.i("JSON COURSE TITLE", course_title);
 
-                String tmpData = "<a style='background-color:#99000;color:#ffffff;'>Delete</a> <b style=font-size: 14px;>"
-                        + "Course Title : \n\n     " + course_title + " <br/> Course Value: "
+                String tmpData = "<b>Delete</b> <br/>"
+                        + "Course Title: \n\n     " + course_title + " <br/> Course Value: "
                         + course_value + " <br/> Group Code: "
-                        + group_code + " </b> "
+                        + group_code
                         + "(" + course_num + ")";
 
 
@@ -157,32 +168,18 @@ public class MyCoursesActivity extends Activity {
                 String course_num = getCatNum(textView.getText().toString());
                 if (action.equals("add")){
                     //createNote(textView.getText().toString());
-                    String message = "I am adding " + textView.getText().toString();
-                    //Toast.makeText(MyCoursesActivity.this, message, Toast.LENGTH_LONG).show();
-
+                    String message = "You select to " + textView.getText().toString();
                     String addUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/course/"+course_num+"?method=post&terse=0&token="+LoginWebView.token;
                     LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(addUrl));
-                    Utils.sleep(1000);
-
-                    //Intent smsIntent = new Intent(Intent.ACTION_VIEW);
-                    //smsIntent.setType("vnd.android-dir/mms-sms");
-                    //smsIntent.putExtra("sms_body","Body of Message");
-                    //startActivity(smsIntent);
+                    Utils.sleep(500);
                     populateListView();
 
                 } else {
-                    String message = "You deleted " + course_num + ", which is: " + textView.getText().toString();
+                    String message = "You selected to " + textView.getText().toString();
                     Toast.makeText(MyCoursesActivity.this, message, Toast.LENGTH_LONG).show();
-                    //mDbHelper.deleteNote(id);
-
-                    SmsManager sms = SmsManager.getDefault();
-                    sms.sendTextMessage("6179675550", null, message, null, null);
-                    //String course_num = getCatNum(textView.getText().toString());//.substring((textView.getText().toString().indexOf("(") + 1), (textView.getText().toString().indexOf(")")));
                     String deleteUrl = "https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/course/"+course_num+"?method=delete&terse=0&token="+LoginWebView.token;
                     LoginWebView.loadUserProfile(LoginWebView.token, LoginWebView._cookie,(deleteUrl));
                     System.out.println(deleteUrl);
-                    //https://apis.huit.harvard.edu/fascourseplanner/rest/v1/cart/course/6947?method=delete&token=
-                    //populateListView();
                     Utils.sleep(500);
                     startActivity(new Intent(MyCoursesActivity.this, MyCoursesActivity.class));
                     finish();
@@ -194,36 +191,6 @@ public class MyCoursesActivity extends Activity {
     public static String getCatNum(String course) {
          String cat_num = course.substring((course.indexOf("(") + 1),(course.indexOf(")")));
          return cat_num;
-    }
-
-    private void createNote(String course_info) {
-        String noteName = "Note " + mNoteNumber++;
-        mDbHelper.createNote(noteName, course_info);
-        Log.i("Note Created", course_info);
-        //fillData();
-    }
-
-
-    private void fillData() {
-        // Get all of the notes from the database and create the item list
-        Cursor c = mDbHelper.fetchAllNotes();
-        startManagingCursor(c);
-
-        String[] from = new String[] { NotesDbAdapter.KEY_BODY };
-        int[] to = new int[] { R.id.text1 };
-
-        // Now create an array adapter and set it to display using our row
-        SimpleCursorAdapter notes =
-                new SimpleCursorAdapter(this, R.layout.textview, c, from, to);
-        //setListAdapter(notes);
-        ListView list = (ListView) findViewById(R.id.listViewMain);
-        list.setAdapter(notes);
-        for( int i = 0; i <= from.length - 1; i++)
-        {
-            Log.i("JSON parse", from[i]);
-            // and the next time get element      1 and 2 and put this in another variable.
-        }
-
     }
 
 }
